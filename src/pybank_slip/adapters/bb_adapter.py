@@ -47,13 +47,29 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
         return self._token
 
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _is_valid(val):
+            if not val:
+                return False
+            if isinstance(val, str) and (not val.strip() or set(val.strip()) == {"0"}):
+                return False
+            return True
+
+        if not self.credentials.client_id or not self.credentials.client_secret:
+            raise ValueError("Banco do Brasil API credentials missing (client_id and client_secret are required).")
         if not self.credentials.app_key:
-            raise ValueError("Chave do APP (app_key) é obrigatória nas credenciais do Banco do Brasil.")
+            raise ValueError("Application key (app_key) is required in Banco do Brasil credentials.")
 
         required_fields = ["numeroConvenio", "numeroCarteira", "dataVencimento", "valorOriginal", "pagador"]
-        missing = [f for f in required_fields if not payload.get(f)]
+        missing = [f for f in required_fields if not _is_valid(payload.get(f))]
         if missing:
-            raise ValueError(f"Payload do Banco do Brasil inválido. Campos obrigatórios ausentes: {', '.join(missing)}")
+            raise ValueError(f"Invalid Banco do Brasil payload. Required fields missing or empty: {', '.join(missing)}")
+
+        pagador = payload.get("pagador", {})
+        if isinstance(pagador, dict):
+            req_pagador = ["nome", "numeroInscricao", "endereco", "cidade", "uf", "cep"]
+            missing_pag = [f for f in req_pagador if not _is_valid(pagador.get(f))]
+            if missing_pag:
+                raise ValueError(f"Invalid Banco do Brasil payload. Required payer details missing or empty: {', '.join(missing_pag)}")
 
         token = self._get_token()
         # Ensure the query string uses the correct app_key variable as defined in the credentials

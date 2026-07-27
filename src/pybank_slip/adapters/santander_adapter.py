@@ -68,15 +68,31 @@ class SantanderAdapter(BaseBankAdapter):
         return self._token
 
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        required_fields = ["covenantCode", "bankNumber", "dueDate", "nominalValue", "payer"]
-        missing = [f for f in required_fields if not payload.get(f)]
-        if missing:
-            raise ValueError(f"Payload do Santander inválido. Campos obrigatórios ausentes: {', '.join(missing)}")
+        def _is_valid(val):
+            if not val:
+                return False
+            if isinstance(val, str) and (not val.strip() or set(val.strip()) == {"0"}):
+                return False
+            return True
 
-        token = self._get_token()
-        workspace_id = self.credentials.workspace_id
-        if not workspace_id:
-            raise ValueError("Workspace ID (workspace_id) é obrigatório nas credenciais do Santander.")
+        if not self.credentials.client_id or not self.credentials.client_secret:
+            raise ValueError("Santander API credentials missing (client_id and client_secret are required).")
+        if not self.credentials.workspace_id:
+            raise ValueError("Workspace ID (workspace_id) is required in Santander credentials.")
+        if not self.cert_auth or not self.cert_auth.cert_path or not self.cert_auth.key_path:
+            raise ValueError("Digital Certificate and Private Key are required for mTLS authentication in Santander.")
+
+        required_fields = ["covenantCode", "bankNumber", "dueDate", "nominalValue", "payer"]
+        missing = [f for f in required_fields if not _is_valid(payload.get(f))]
+        if missing:
+            raise ValueError(f"Invalid Santander payload. Required fields missing or empty: {', '.join(missing)}")
+
+        payer = payload.get("payer", {})
+        if isinstance(payer, dict):
+            req_payer = ["name", "documentNumber", "address", "city", "state", "zipCode"]
+            missing_payer = [f for f in req_payer if not _is_valid(payer.get(f))]
+            if missing_payer:
+                raise ValueError(f"Invalid Santander payload. Required payer details missing or empty: {', '.join(missing_payer)}")
             
         url = f"{self.base_url}{self.route_bank_slips}".format(workspace_id=workspace_id)
         

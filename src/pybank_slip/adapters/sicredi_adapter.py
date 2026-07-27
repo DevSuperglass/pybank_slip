@@ -90,17 +90,27 @@ class SicrediAdapter(BaseBankAdapter):
         return headers
 
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        def _is_valid(val):
+            if not val:
+                return False
+            if isinstance(val, str) and (not val.strip() or set(val.strip()) == {"0"}):
+                return False
+            return True
+
+        if not self.credentials.client_secret:
+            raise ValueError("API credential 'client_secret' (password) is required for Sicredi.")
+
         required_fields = ["cooperativa", "posto", "codigoBeneficiario", "dataVencimento", "valor", "pagador"]
-        missing = [f for f in required_fields if not payload.get(f)]
+        missing = [f for f in required_fields if not _is_valid(payload.get(f))]
         if missing:
-            raise ValueError(f"Payload do Sicredi inválido. Campos obrigatórios ausentes: {', '.join(missing)}")
+            raise ValueError(f"Invalid Sicredi payload. Required fields missing or empty: {', '.join(missing)}")
 
         pagador = payload.get("pagador", {})
         if isinstance(pagador, dict):
-            req_pagador = ["nome", "documento", "cidade", "uf", "cep"]
-            missing_pag = [f for f in req_pagador if not pagador.get(f)]
+            req_pagador = ["nome", "documento", "endereco", "cidade", "uf", "cep"]
+            missing_pag = [f for f in req_pagador if not _is_valid(pagador.get(f))]
             if missing_pag:
-                raise ValueError(f"Payload do Sicredi inválido. Dados do pagador ausentes: {', '.join(missing_pag)}")
+                raise ValueError(f"Invalid Sicredi payload. Required payer details missing or empty: {', '.join(missing_pag)}")
 
         cooperativa = payload.get("cooperativa", "")
         posto = payload.get("posto", "")
