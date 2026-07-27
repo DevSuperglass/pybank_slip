@@ -35,3 +35,6 @@ venv.bak/
 .vscode/
 .idea/
 *.swp
+
+# CACHE
+.cpython-310.pyc
