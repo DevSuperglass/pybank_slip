@@ -2,6 +2,10 @@ import json
 import re
 
 def safe_json_loads(text):
+    if hasattr(text, 'text'):
+        text = text.text
+    if isinstance(text, (dict, list)):
+        return text
     if not text:
         return {}
     try:
