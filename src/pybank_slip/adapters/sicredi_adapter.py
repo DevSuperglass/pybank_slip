@@ -90,6 +90,18 @@ class SicrediAdapter(BaseBankAdapter):
         return headers
 
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        required_fields = ["cooperativa", "posto", "codigoBeneficiario", "dataVencimento", "valor", "pagador"]
+        missing = [f for f in required_fields if not payload.get(f)]
+        if missing:
+            raise ValueError(f"Payload do Sicredi inválido. Campos obrigatórios ausentes: {', '.join(missing)}")
+
+        pagador = payload.get("pagador", {})
+        if isinstance(pagador, dict):
+            req_pagador = ["nome", "documento", "cidade", "uf", "cep"]
+            missing_pag = [f for f in req_pagador if not pagador.get(f)]
+            if missing_pag:
+                raise ValueError(f"Payload do Sicredi inválido. Dados do pagador ausentes: {', '.join(missing_pag)}")
+
         cooperativa = payload.get("cooperativa", "")
         posto = payload.get("posto", "")
         codigo_beneficiario = payload.get("codigoBeneficiario", "")

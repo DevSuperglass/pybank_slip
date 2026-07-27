@@ -47,6 +47,14 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
         return self._token
 
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.credentials.app_key:
+            raise ValueError("Chave do APP (app_key) é obrigatória nas credenciais do Banco do Brasil.")
+
+        required_fields = ["numeroConvenio", "numeroCarteira", "dataVencimento", "valorOriginal", "pagador"]
+        missing = [f for f in required_fields if not payload.get(f)]
+        if missing:
+            raise ValueError(f"Payload do Banco do Brasil inválido. Campos obrigatórios ausentes: {', '.join(missing)}")
+
         token = self._get_token()
         # Ensure the query string uses the correct app_key variable as defined in the credentials
         app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"

@@ -68,10 +68,15 @@ class SantanderAdapter(BaseBankAdapter):
         return self._token
 
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        required_fields = ["covenantCode", "bankNumber", "dueDate", "nominalValue", "payer"]
+        missing = [f for f in required_fields if not payload.get(f)]
+        if missing:
+            raise ValueError(f"Payload do Santander inválido. Campos obrigatórios ausentes: {', '.join(missing)}")
+
         token = self._get_token()
         workspace_id = self.credentials.workspace_id
         if not workspace_id:
-            raise ValueError("Workspace ID is required for Santander bank slips.")
+            raise ValueError("Workspace ID (workspace_id) é obrigatório nas credenciais do Santander.")
             
         url = f"{self.base_url}{self.route_bank_slips}".format(workspace_id=workspace_id)
         
