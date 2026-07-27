@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybank_slip"
-version = "0.1.0"
+version = "0.2.0"
 description = "A framework-agnostic Python library to manage Brazilian bank slips (boletos) across multiple banks."
 readme = "README.md"
 authors = [
@@ -16,7 +16,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-keywords = ["boleto", "bank slip", "banco do brasil", "santander", "brazil", "payment"]
+keywords = ["boleto", "bank slip", "banco do brasil", "santander", "sicredi", "brazil", "payment"]
 dependencies = [
     "requests>=2.28.0",
 ]
