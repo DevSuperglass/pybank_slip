@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybank_slip"
-version = "0.2.0"
+version = "0.2.1"
 description = "A framework-agnostic Python library to manage Brazilian bank slips (boletos) across multiple banks."
 readme = "README.md"
 authors = [
