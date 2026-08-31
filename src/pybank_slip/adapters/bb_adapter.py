@@ -2,7 +2,7 @@ import requests
 from ..utils import safe_json_loads
 from typing import Dict, Any, Optional
 from ..interfaces import BaseBankAdapter
-from ..auth import CertificateAuth, OAuthCredentials
+from ..auth import OAuthCredentials
 from requests.auth import HTTPBasicAuth
 
 class BancoDoBrasilAdapter(BaseBankAdapter):
@@ -20,10 +20,9 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
     Bank slip adapter for Banco do Brasil API V2.
     """
 
-    def __init__(self, credentials: OAuthCredentials, environment: str = 'production', cert_auth: Optional[CertificateAuth] = None):
+    def __init__(self, credentials: OAuthCredentials, environment: str = 'production', **kwargs):
         self.credentials = credentials
         self.environment = environment.lower()
-        self.cert_auth = cert_auth
         self._set_urls()
         self._token = None
 
@@ -38,8 +37,6 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             self.token_url,
             data=payload,
             auth=HTTPBasicAuth(self.credentials.client_id, self.credentials.client_secret),
-            cert=(self.cert_auth.cert_path, self.cert_auth.key_path),
-            verify=self.cert_auth.verify,
         )
         if response.status_code >= 400:
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
@@ -86,8 +83,6 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             url=url,
             json=payload,
             headers=headers,
-            cert=(self.cert_auth.cert_path, self.cert_auth.key_path),
-            verify=self.cert_auth.verify,
         )
         if response.status_code >= 400:
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
@@ -107,8 +102,6 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             url=url,
             params=filters,
             headers=headers,
-            cert=(self.cert_auth.cert_path, self.cert_auth.key_path),
-            verify=self.cert_auth.verify,
         )
         if response.status_code >= 400:
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
@@ -132,8 +125,6 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             url=url,
             json=payload,
             headers=headers,
-            cert=(self.cert_auth.cert_path, self.cert_auth.key_path),
-            verify=self.cert_auth.verify,
         )
         if response.status_code >= 400:
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
@@ -154,8 +145,6 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             url=url,
             json=payload,
             headers=headers,
-            cert=(self.cert_auth.cert_path, self.cert_auth.key_path),
-            verify=self.cert_auth.verify,
         )
         if response.status_code >= 400:
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")

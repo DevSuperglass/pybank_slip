@@ -23,15 +23,13 @@ class BankSlipManager:
         :param bank_code: String identifier for the bank (e.g., 'bb', 'santander').
         :param credentials: OAuthCredentials object containing client_id and secret.
         :param environment: Environment parameter ('production' or 'sandbox').
-        :param cert_auth: Optional CertificateAuth for mTLS required by Banco do Brasil.
+        :param cert_auth: Optional CertificateAuth for mTLS (required by Santander).
         :return: BaseBankAdapter instance.
         """
         bank_code = bank_code.lower().strip()
         
         if bank_code == "bb":
-            if not cert_auth:
-                raise ValueError("Banco do Brasil requires CertificateAuth for mTLS.")
-            return BancoDoBrasilAdapter(credentials=credentials, environment=environment, cert_auth=cert_auth)
+            return BancoDoBrasilAdapter(credentials=credentials, environment=environment)
         
         elif bank_code == "santander":
             return SantanderAdapter(credentials=credentials, environment=environment, cert_auth=cert_auth)
