@@ -1,0 +1,11 @@
+# Excluir explicitamente todos os arquivos compilados e caches
+global-exclude *.py[cod] __pycache__ *.so *.dylib
+global-exclude *.egg-info *.egg-info/*
+global-exclude *~ *.swp .DS_Store Thumbs.db
+
+# Excluir pastas de teste e ambientes
+prune tests
+prune build
+prune dist
+prune .vscode
+prune .idea
