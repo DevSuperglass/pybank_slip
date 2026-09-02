@@ -68,6 +68,8 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             if missing_pag:
                 raise ValueError(f"Invalid Banco do Brasil payload. Required payer details missing or empty: {', '.join(missing_pag)}")
 
+        payload = self.sanitize_payload(payload)
+
         token = self._get_token()
         # Ensure the query string uses the correct app_key variable as defined in the credentials
         app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"
@@ -131,6 +133,7 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
         return safe_json_loads(response.text)
 
     def edit_bank_slip(self, bank_slip_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        payload = self.sanitize_payload(payload)
         token = self._get_token()
         app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"
         url = f"{self.base_url}{self.route_bank_slips}/{bank_slip_id}{app_key_qs}"

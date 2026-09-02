@@ -94,6 +94,8 @@ class SantanderAdapter(BaseBankAdapter):
             if missing_payer:
                 raise ValueError(f"Invalid Santander payload. Required payer details missing or empty: {', '.join(missing_payer)}")
 
+        payload = self.sanitize_payload(payload)
+
         token = self._get_token()
         workspace_id = self.credentials.workspace_id
         url = f"{self.base_url}{self.route_bank_slips}".format(workspace_id=workspace_id)
@@ -122,6 +124,7 @@ class SantanderAdapter(BaseBankAdapter):
         raise NotImplementedError("Cancel bank slip must use edit_bank_slip (patch) with the cancel payload in Santander.")
 
     def edit_bank_slip(self, bank_slip_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        payload = self.sanitize_payload(payload)
         token = self._get_token()
         workspace_id = self.credentials.workspace_id
         url = f"{self.base_url}{self.route_bank_slips}".format(workspace_id=workspace_id)

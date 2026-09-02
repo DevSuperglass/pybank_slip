@@ -7,6 +7,16 @@ class BaseBankAdapter(abc.ABC):
     All bank adapters must implement these standard operations.
     """
 
+    def sanitize_payload(self, data: Any) -> Any:
+        """Recursively rounds all float values in dictionaries and lists to 2 decimal places."""
+        if isinstance(data, dict):
+            return {k: self.sanitize_payload(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self.sanitize_payload(v) for v in data]
+        elif isinstance(data, float):
+            return round(data, 2)
+        return data
+
     @abc.abstractmethod
     def generate_bank_slip(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Generate (issue) a new bank slip."""

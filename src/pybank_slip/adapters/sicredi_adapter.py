@@ -112,6 +112,8 @@ class SicrediAdapter(BaseBankAdapter):
             if missing_pag:
                 raise ValueError(f"Invalid Sicredi payload. Required payer details missing or empty: {', '.join(missing_pag)}")
 
+        payload = self.sanitize_payload(payload)
+
         cooperativa = payload.get("cooperativa", "")
         posto = payload.get("posto", "")
         codigo_beneficiario = payload.get("codigoBeneficiario", "")
@@ -158,6 +160,7 @@ class SicrediAdapter(BaseBankAdapter):
         raise NotImplementedError("List bank slips is not yet implemented for Sicredi.")
 
     def edit_bank_slip(self, bank_number: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        payload = self.sanitize_payload(payload)
         # Para alterar vencimento (única alteração coberta por padrão no edit_bank_slip básico caso tenha dataVencimento no payload)
         if "dataVencimento" in payload:
             cooperativa = payload.get("cooperativa", "")
