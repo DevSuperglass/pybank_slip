@@ -37,7 +37,7 @@ class BaseBankAdapter(abc.ABC):
         """Edit an existing bank slip."""
         pass
 
-    def search_workspaces(self) -> dict:
+    def search_workspaces(self, **kwargs) -> dict:
         raise NotImplementedError
 
     def create_workspace(self, payload: dict) -> dict:

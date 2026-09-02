@@ -15,3 +15,6 @@ class OAuthCredentials:
     client_secret: str
     app_key: Optional[str] = None
     workspace_id: Optional[str] = None
+    cooperativa: Optional[str] = None
+    posto: Optional[str] = None
+    codigo_beneficiario: Optional[str] = None
