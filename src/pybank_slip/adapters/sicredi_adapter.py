@@ -75,7 +75,7 @@ class SicrediAdapter(BaseBankAdapter):
                     break
 
         if response.status_code >= 400:
-            raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
+            raise Exception(f"HTTP Token Error {response.status_code} for url {response.url}: {response.text}")
 
         self._token = response.json().get("access_token")
         return self._token
@@ -117,6 +117,8 @@ class SicrediAdapter(BaseBankAdapter):
                 raise ValueError(f"Invalid Sicredi payload. Required payer details missing or empty: {', '.join(missing_pag)}")
 
         payload = self.sanitize_payload(payload)
+        if "beneficiarioFinal" in payload and not payload.get("beneficiarioFinal"):
+            payload.pop("beneficiarioFinal", None)
 
         cooperativa = payload.get("cooperativa", "")
         posto = payload.get("posto", "")
@@ -139,14 +141,19 @@ class SicrediAdapter(BaseBankAdapter):
         return safe_json_loads(response.text)
 
     def cancel_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        if not payload:
-            raise ValueError("Payload is required for cancelling Sicredi bank slips (must contain cooperativa, posto, codigoBeneficiario)")
+        p = payload or {}
+        cooperativa = str(p.get("cooperativa") or getattr(self.credentials, 'cooperativa', '') or "")
+        posto = str(p.get("posto") or getattr(self.credentials, 'posto', '') or "")
+        codigo_beneficiario = str(p.get("codigoBeneficiario") or getattr(self.credentials, 'codigo_beneficiario', '') or "")
 
-        cooperativa = payload.get("cooperativa", "")
-        posto = payload.get("posto", "")
-        codigo_beneficiario = payload.get("codigoBeneficiario", "")
+        if not cooperativa or not posto or not codigo_beneficiario:
+            raise ValueError("Campos obrigatórios ausentes para cancelamento/baixa no Sicredi (cooperativa, posto, codigoBeneficiario).")
 
-        headers = self._build_headers(cooperativa, posto, codigo_beneficiario, include_beneficiario_in_header=True)
+        coop_formatted = cooperativa.zfill(4)[:4]
+        posto_formatted = posto.zfill(2)[:2]
+        bnf_formatted = codigo_beneficiario.zfill(5)[:5]
+
+        headers = self._build_headers(coop_formatted, posto_formatted, bnf_formatted, include_beneficiario_in_header=True)
         url = f"{self.base_url}{self.route_bank_slips}/{bank_number}/baixa"
 
         response = requests.patch(
@@ -284,9 +291,19 @@ class SicrediAdapter(BaseBankAdapter):
 
     def cancel_webhook_contract(self, contract_id: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Inativa/cancela contrato de webhook alterando contratoStatus e urlStatus para INATIVO."""
-        payload_cancel = dict(payload or {})
-        payload_cancel["contratoStatus"] = "INATIVO"
-        payload_cancel["urlStatus"] = "INATIVO"
+        p = dict(payload or {})
+        coop = p.get("cooperativa") or getattr(self.credentials, 'cooperativa', '') or ""
+        pst = p.get("posto") or getattr(self.credentials, 'posto', '') or ""
+        bnf = p.get("codBeneficiario") or p.get("covenant_code") or getattr(self.credentials, 'codigo_beneficiario', '') or ""
+        payload_cancel = {
+            "cooperativa": str(coop).zfill(4) if coop else "",
+            "posto": str(pst).zfill(2) if pst else "",
+            "codBeneficiario": str(bnf).zfill(5) if bnf else "",
+            "eventos": p.get("eventos") or ["LIQUIDACAO"],
+            "url": p.get("url") or p.get("webhookURL") or p.get("webhook_url", ""),
+            "urlStatus": "INATIVO",
+            "contratoStatus": "INATIVO",
+        }
         return self.edit_webhook_contract(contract_id, payload_cancel)
 
     # Workspace Interface Implementations (Strategy Pattern)
@@ -377,6 +394,6 @@ class SicrediAdapter(BaseBankAdapter):
         }
         return self.edit_webhook_contract(workspace_id, contract_payload)
 
-    def delete_workspace(self, workspace_id: str) -> None:
+    def delete_workspace(self, workspace_id: str, payload: Optional[dict] = None) -> None:
         """Inativa o workspace/contrato no Sicredi."""
-        self.cancel_webhook_contract(workspace_id)
+        self.cancel_webhook_contract(workspace_id, payload)
