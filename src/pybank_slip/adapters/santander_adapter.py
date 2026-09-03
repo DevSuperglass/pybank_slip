@@ -183,7 +183,7 @@ class SantanderAdapter(BaseBankAdapter):
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
         return safe_json_loads(response.text)
 
-    def delete_workspace(self, workspace_id: str) -> None:
+    def delete_workspace(self, workspace_id: str, payload: Optional[dict] = None) -> None:
         token = self._get_token()
         url = f"{self.base_url}/workspaces/{workspace_id}"
         headers = {
