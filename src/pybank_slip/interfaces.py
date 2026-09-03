@@ -44,5 +44,5 @@ class BaseBankAdapter(abc.ABC):
         raise NotImplementedError
     def edit_workspace(self, workspace_id: str, payload: dict) -> dict:
         raise NotImplementedError
-    def delete_workspace(self, workspace_id: str) -> None:
+    def delete_workspace(self, workspace_id: str, payload: Optional[dict] = None) -> None:
         raise NotImplementedError
