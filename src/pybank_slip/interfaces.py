@@ -37,6 +37,10 @@ class BaseBankAdapter(abc.ABC):
         """Edit an existing bank slip."""
         pass
 
+    def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Query/retrieve a single bank slip by bank number."""
+        raise NotImplementedError
+
     def search_workspaces(self, **kwargs) -> dict:
         raise NotImplementedError
 
