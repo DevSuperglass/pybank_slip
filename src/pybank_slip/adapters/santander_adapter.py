@@ -120,6 +120,9 @@ class SantanderAdapter(BaseBankAdapter):
     def list_bank_slips(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         raise NotImplementedError("List bank slips is not yet implemented for Santander.")
 
+    def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        raise NotImplementedError("Get bank slip is not yet implemented for Santander.")
+
     def cancel_bank_slip(self, bank_slip_id: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         raise NotImplementedError("Cancel bank slip must use edit_bank_slip (patch) with the cancel payload in Santander.")
 
