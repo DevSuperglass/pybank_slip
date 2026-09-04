@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 from ..interfaces import BaseBankAdapter
 from ..auth import CertificateAuth, OAuthCredentials
 import json
+import re
 
 class SicrediAdapter(BaseBankAdapter):
     def _set_urls(self):
@@ -169,6 +170,34 @@ class SicrediAdapter(BaseBankAdapter):
 
     def list_bank_slips(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         raise NotImplementedError("List bank slips is not yet implemented for Sicredi.")
+
+    def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        cooperativa = payload.get("cooperativa", "") if payload else ""
+        posto = payload.get("posto", "") if payload else ""
+        codigo_beneficiario = payload.get("codigoBeneficiario", "") if payload else ""
+
+        clean_coop = re.sub(r'\D', '', str(cooperativa or getattr(self.credentials, 'cooperativa', '') or ""))
+        clean_posto = re.sub(r'\D', '', str(posto or getattr(self.credentials, 'posto', '') or ""))
+        clean_bnf = re.sub(r'\D', '', str(codigo_beneficiario or getattr(self.credentials, 'codigo_beneficiario', '') or ""))
+        clean_num = re.sub(r'\D', '', str(bank_number or ""))
+
+        token = self._get_token(clean_coop, clean_bnf)
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "x-api-key": self.credentials.client_id,
+            "Content-Type": "application/json",
+            "cooperativa": clean_coop.zfill(4)[:4],
+            "posto": clean_posto.zfill(2)[:2],
+        }
+        url = f"{self.base_url}{self.route_bank_slips}"
+        params = {
+            "codigoBeneficiario": clean_bnf.zfill(5)[:5],
+            "nossoNumero": clean_num.zfill(9)[:9],
+        }
+        response = requests.get(url, params=params, headers=headers)
+        if response.status_code >= 400:
+            raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
+        return safe_json_loads(response.text)
 
     def edit_bank_slip(self, bank_number: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         payload = self.sanitize_payload(payload)

@@ -109,6 +109,23 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
         return safe_json_loads(response.text)
 
+    def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        token = self._get_token()
+        app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"
+        url = f"{self.base_url}{self.route_bank_slips}/{bank_number}{app_key_qs}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
+        numero_convenio = payload.get("numeroConvenio") if payload else getattr(self.credentials, 'numeroConvenio', None)
+        params = {}
+        if numero_convenio:
+            params["numeroConvenio"] = numero_convenio
+        response = requests.get(url=url, params=params, headers=headers)
+        if response.status_code >= 400:
+            raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
+        return safe_json_loads(response.text)
+
     def cancel_bank_slip(self, bank_slip_id: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         token = self._get_token()
         app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"
