@@ -121,7 +121,35 @@ class SantanderAdapter(BaseBankAdapter):
         raise NotImplementedError("List bank slips is not yet implemented for Santander.")
 
     def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        raise NotImplementedError("Get bank slip is not yet implemented for Santander.")
+        payload = payload or {}
+        workspace_id = payload.get("workspace_id") or self.credentials.workspace_id
+
+        nsu_code = payload.get("nsuCode")
+        nsu_date = payload.get("nsuDate")
+        covenant_code = payload.get("covenant_code")
+        bank_number = payload.get("bankNumber")
+        env_code = "T" if self.environment == "sandbox" else "P"
+
+        bank_slip_id = f"{nsu_code}.{nsu_date}.{env_code}.{covenant_code}.{bank_number}"
+
+        token = self._get_token()
+        url = f"{self.base_url}/collection_bill_management/v2/workspaces/{workspace_id}/bank_slips/{bank_slip_id}"
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Application-Key": self.credentials.client_id,
+            "Accept": "*/*",
+        }
+
+        cert_args = {}
+        if self.cert_auth:
+            cert_args['cert'] = (self.cert_auth.cert_path, self.cert_auth.key_path)
+            cert_args['verify'] = self.cert_auth.verify
+
+        response = requests.get(url=url, headers=headers, **cert_args)
+        if response.status_code >= 400:
+            raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
+        return safe_json_loads(response.text)
 
     def cancel_bank_slip(self, bank_slip_id: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         raise NotImplementedError("Cancel bank slip must use edit_bank_slip (patch) with the cancel payload in Santander.")

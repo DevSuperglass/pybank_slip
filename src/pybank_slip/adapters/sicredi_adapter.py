@@ -142,19 +142,12 @@ class SicrediAdapter(BaseBankAdapter):
         return safe_json_loads(response.text)
 
     def cancel_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        p = payload or {}
-        cooperativa = str(p.get("cooperativa") or getattr(self.credentials, 'cooperativa', '') or "")
-        posto = str(p.get("posto") or getattr(self.credentials, 'posto', '') or "")
-        codigo_beneficiario = str(p.get("codigoBeneficiario") or getattr(self.credentials, 'codigo_beneficiario', '') or "")
+        payload = payload or {}
+        cooperativa = payload.get("cooperativa")
+        posto = payload.get("posto")
+        codigo_beneficiario = payload.get("codigoBeneficiario")
 
-        if not cooperativa or not posto or not codigo_beneficiario:
-            raise ValueError("Campos obrigatórios ausentes para cancelamento/baixa no Sicredi (cooperativa, posto, codigoBeneficiario).")
-
-        coop_formatted = cooperativa.zfill(4)[:4]
-        posto_formatted = posto.zfill(2)[:2]
-        bnf_formatted = codigo_beneficiario.zfill(5)[:5]
-
-        headers = self._build_headers(coop_formatted, posto_formatted, bnf_formatted, include_beneficiario_in_header=True)
+        headers = self._build_headers(cooperativa, posto, codigo_beneficiario, include_beneficiario_in_header=True)
         url = f"{self.base_url}{self.route_bank_slips}/{bank_number}/baixa"
 
         response = requests.patch(
@@ -172,27 +165,23 @@ class SicrediAdapter(BaseBankAdapter):
         raise NotImplementedError("List bank slips is not yet implemented for Sicredi.")
 
     def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        cooperativa = payload.get("cooperativa", "") if payload else ""
-        posto = payload.get("posto", "") if payload else ""
-        codigo_beneficiario = payload.get("codigoBeneficiario", "") if payload else ""
+        payload = payload or {}
+        cooperativa = payload.get("cooperativa")
+        posto = payload.get("posto")
+        codigo_beneficiario = payload.get("codigoBeneficiario")
 
-        clean_coop = re.sub(r'\D', '', str(cooperativa or getattr(self.credentials, 'cooperativa', '') or ""))
-        clean_posto = re.sub(r'\D', '', str(posto or getattr(self.credentials, 'posto', '') or ""))
-        clean_bnf = re.sub(r'\D', '', str(codigo_beneficiario or getattr(self.credentials, 'codigo_beneficiario', '') or ""))
-        clean_num = re.sub(r'\D', '', str(bank_number or ""))
-
-        token = self._get_token(clean_coop, clean_bnf)
+        token = self._get_token(cooperativa, codigo_beneficiario)
         headers = {
             "Authorization": f"Bearer {token}",
             "x-api-key": self.credentials.client_id,
             "Content-Type": "application/json",
-            "cooperativa": clean_coop.zfill(4)[:4],
-            "posto": clean_posto.zfill(2)[:2],
+            "cooperativa": cooperativa,
+            "posto": posto,
         }
         url = f"{self.base_url}{self.route_bank_slips}"
         params = {
-            "codigoBeneficiario": clean_bnf.zfill(5)[:5],
-            "nossoNumero": clean_num.zfill(9)[:9],
+            "codigoBeneficiario": codigo_beneficiario,
+            "nossoNumero": bank_number,
         }
         response = requests.get(url, params=params, headers=headers)
         if response.status_code >= 400:

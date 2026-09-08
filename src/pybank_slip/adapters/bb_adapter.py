@@ -110,6 +110,7 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
         return safe_json_loads(response.text)
 
     def get_bank_slip(self, bank_number: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        payload = payload or {}
         token = self._get_token()
         app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"
         url = f"{self.base_url}{self.route_bank_slips}/{bank_number}{app_key_qs}"
@@ -117,16 +118,16 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             "Authorization": f"Bearer {token}",
             "Accept": "application/json",
         }
-        numero_convenio = payload.get("numeroConvenio") if payload else getattr(self.credentials, 'numeroConvenio', None)
-        params = {}
-        if numero_convenio:
-            params["numeroConvenio"] = numero_convenio
+        params = {
+            "numeroConvenio": payload.get("numeroConvenio"),
+        }
         response = requests.get(url=url, params=params, headers=headers)
         if response.status_code >= 400:
             raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
         return safe_json_loads(response.text)
 
     def cancel_bank_slip(self, bank_slip_id: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        payload = payload or {}
         token = self._get_token()
         app_key_qs = f"?gw-dev-app-key={self.credentials.app_key}"
         url = f"{self.base_url}{self.route_bank_slips}{app_key_qs}/{bank_slip_id}/baixar"
@@ -137,9 +138,6 @@ class BancoDoBrasilAdapter(BaseBankAdapter):
             "Accept": "application/json",
         }
         
-        if not payload:
-            payload = {"numeroConvenio": ""} # Must be filled by the caller
-            
         response = requests.post(
             url=url,
             json=payload,
