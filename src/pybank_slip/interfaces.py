@@ -50,3 +50,6 @@ class BaseBankAdapter(abc.ABC):
         raise NotImplementedError
     def delete_workspace(self, workspace_id: str, payload: Optional[dict] = None) -> None:
         raise NotImplementedError
+
+    def get_financial_movements(self, **kwargs) -> Dict[str, Any]:
+        raise NotImplementedError

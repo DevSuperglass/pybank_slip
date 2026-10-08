@@ -10,14 +10,17 @@ class SicrediAdapter(BaseBankAdapter):
     def _set_urls(self):
         if self.environment == 'sandbox':
             self.base_url = "https://api-parceiro.sicredi.com.br/sb/cobranca/boleto/v1"
+            self.cobranca_v1_url = "https://api-parceiro.sicredi.com.br/sb/cobranca/v1"
             self.token_url = "https://api-parceiro.sicredi.com.br/sb/auth/openapi/token"
         else:
             self.base_url = "https://api-parceiro.sicredi.com.br/cobranca/boleto/v1"
+            self.cobranca_v1_url = "https://api-parceiro.sicredi.com.br/cobranca/v1"
             self.token_url = "https://api-parceiro.sicredi.com.br/auth/openapi/token"
 
         self.route_bank_slips = "/boletos"
         self.route_webhook_contrato = "/webhook/contrato"
         self.route_webhook_contratos = "/webhook/contratos"
+        self.route_movimentacoes = "/cobranca-financeiro/movimentacoes"
 
     def __init__(self, credentials: OAuthCredentials, environment: str = 'production', cert_auth: Optional[CertificateAuth] = None):
         """
@@ -415,3 +418,37 @@ class SicrediAdapter(BaseBankAdapter):
     def delete_workspace(self, workspace_id: str, payload: Optional[dict] = None) -> None:
         """Inativa o workspace/contrato no Sicredi."""
         self.cancel_webhook_contract(workspace_id, payload)
+
+    def get_financial_movements(
+        self,
+        cooperativa: str,
+        posto: str,
+        codigo_beneficiario: str,
+        data_lancamento: str,
+        tipo_movimento: str,
+        pagina: Optional[int] = 0
+    ) -> Dict[str, Any]:
+        """
+        Consulta movimentações financeiras da cobrança Sicredi:
+        GET /cobranca/v1/cobranca-financeiro/movimentacoes/
+        """
+        token = self._get_token(cooperativa, codigo_beneficiario)
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "x-api-key": self.credentials.client_id,
+            "Accept": "application/json",
+        }
+        params = {
+            "codigoBeneficiario": str(codigo_beneficiario).strip(),
+            "cooperativa": str(cooperativa).strip(),
+            "posto": str(posto).strip(),
+            "dataLancamento": str(data_lancamento).strip(),
+            "tipoMovimento": str(tipo_movimento).strip(),
+            "pagina": pagina if pagina is not None else 0,
+        }
+        url = f"{self.cobranca_v1_url}{self.route_movimentacoes}/"
+        response = requests.get(url, params=params, headers=headers)
+        if response.status_code >= 400:
+            raise Exception(f"HTTP Error {response.status_code} for url {response.url}: {response.text}")
+        return safe_json_loads(response.text)
+
